@@ -26,7 +26,3 @@
 ### Запуск отправителя
 ```bash
 python src/main.py sender <server_address> <port>
-
-#### Запуск слушателя
-```bash
-python src/main.py listener <ip_address> <port>
