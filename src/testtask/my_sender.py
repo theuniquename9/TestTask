@@ -10,17 +10,30 @@ class MySender:
         size = random.randint(1, max_size)
         return bytes(random.getrandbits(8) for _ in range(size))
 
+    def _get_minimum_bytes_for_size(self, size):
+        # Вычисляем минимальное количество байт, необходимое для представления размера данных
+        # size.bit_length() возвращает количество бит, требуемых для представления size
+        # (size.bit_length() + 7) // 8 вычисляет количество байт для этого количества бит
+        byte_length = (size.bit_length() + 7) // 8
+        return size.to_bytes(byte_length, byteorder='big')
+
     def send_data(self):
         data = self._generate_data()
-        data_size = len(data).to_bytes(4, byteorder='big')
+        # Получаем длину данных и представляем её в минимально необходимом количестве байт
+        data_size = self._get_minimum_bytes_for_size(len(data))
         
         for attempt in range(3):  # Попытки подключения
             try:
+                # Создаем TCP-соединение с сервером
                 with socket.create_connection((self.server_address, self.port), timeout=10) as sock:
-                    sock.sendall(data_size + data)  # Отправка данных в формате <размер><данные>
+                    # Отправляем сначала размер данных в формате <размер><данные>
+                    sock.sendall(data_size + data)
                     print("Data sent successfully.")
                     break
-            except (socket.timeout, ConnectionRefusedError):
-                print(f"Attempt {attempt + 1} failed. Retrying in 10 seconds...")
+            except (socket.timeout, ConnectionRefusedError) as e:
+                # В случае неудачи соединения ждем 10 секунд и пробуем снова
+                print(f"Attempt {attempt + 1} failed ({e}). Retrying in 10 seconds...")
+                time.sleep(10)
         else:
+            # Если все три попытки неудачны, выводим сообщение об ошибке
             print("Failed to send data after 3 attempts.")
